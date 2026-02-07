@@ -8,21 +8,22 @@ export default function Home() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    // Test Supabase connection
+    // Test connection by querying the todos table
     const testConnection = async () => {
       try {
-        const { data, error } = await supabase.from('_test').select('*').limit(1)
+        // This should work now! (returns empty array, but no error)
+        const { data, error } = await supabase
+          .from('todos')
+          .select('*')
+          .limit(1)
         
-        // If we get PGRST205 (table doesn't exist), connection is working!
-        if (error && error.code === 'PGRST205') {
-          setConnected(true)
-          console.log('✅ Supabase connected! (Table not found is expected)')
-        } else if (!error) {
-          setConnected(true)
-          console.log('✅ Supabase connected!')
-        } else {
+        if (error) {
           setError(error.message)
-          console.error('❌ Connection error:', error)
+          console.error('❌ Database error:', error)
+        } else {
+          setConnected(true)
+          console.log('✅ Database connected! Todos table exists!')
+          console.log('Current todos:', data)
         }
       } catch (err) {
         setError(err.message)
@@ -37,8 +38,8 @@ export default function Home() {
       <div className="text-center text-white">
         <h1 className="text-6xl font-bold mb-4">My CRUD App</h1>
         <p className="text-xl mb-4">
-          {connected && '✅ Supabase Connected!'}
-          {!connected && !error && '⏳ Connecting to Supabase...'}
+          {connected && '✅ Database Ready!'}
+          {!connected && !error && '⏳ Connecting to database...'}
           {error && `❌ Error: ${error}`}
         </p>
         <p className="text-lg mb-8">A simple todo app built with Next.js & Supabase</p>
@@ -52,5 +53,3 @@ export default function Home() {
     </div>
   )
 }
-
-
