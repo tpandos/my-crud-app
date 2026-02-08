@@ -2,6 +2,33 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { isUserAdmin } from '@/lib/adminHelpers'
+import Link from 'next/link'
+
+// Admin Link Component
+function AdminLink() {
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    checkAdmin()
+  }, [])
+
+  const checkAdmin = async () => {
+    const admin = await isUserAdmin()
+    setIsAdmin(admin)
+  }
+
+  if (!isAdmin) return null
+
+  return (
+    <Link
+      href="/admin"
+      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+    >
+      🔧 Admin
+    </Link>
+  )
+}
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -107,12 +134,15 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
               <p className="text-gray-600 mt-1">Logged in as: {user?.email}</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-            >
-              Sign Out
-            </button>
+            <div className="flex gap-3">
+              <AdminLink />
+              <button
+                onClick={handleSignOut}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
 
