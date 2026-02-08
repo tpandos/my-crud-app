@@ -135,14 +135,20 @@ export default function Dashboard() {
               <p className="text-gray-600 mt-1">Logged in as: {user?.email}</p>
             </div>
             <div className="flex gap-3">
-              <AdminLink />
-              <button
-                onClick={handleSignOut}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
+  <Link
+    href="/my-books"
+    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+  >
+    📚 My Books
+  </Link>
+  <AdminLink />
+  <button
+    onClick={handleSignOut}
+    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+  >
+    Sign Out
+  </button>
+</div>
           </div>
         </div>
 

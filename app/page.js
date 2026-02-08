@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import CommunityBoard from './components/CommunityBoard'
 import EventCalendar from './components/EventCalendar'
+import PollsDisplay from './components/PollsDisplay'
 
 export default function Home() {
   return (
@@ -20,6 +21,12 @@ export default function Home() {
               Get Started
             </Link>
             <Link
+              href="/books"
+              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 inline-block transition-colors"
+            >
+              Browse Books
+            </Link>
+            <Link
               href="/dashboard"
               className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 inline-block transition-colors"
             >
@@ -31,6 +38,12 @@ export default function Home() {
 
       {/* Community Board Section */}
       <CommunityBoard />
+
+      {/* Community Board Section */}
+<CommunityBoard />
+
+{/* Polls Section */}
+<PollsDisplay />
 
       {/* Event Calendar Section */}
       <EventCalendar />
