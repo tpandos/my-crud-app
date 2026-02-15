@@ -39,9 +39,6 @@ export default function Home() {
       {/* Community Board Section */}
       <CommunityBoard />
 
-      {/* Community Board Section */}
-<CommunityBoard />
-
 {/* Polls Section */}
 <PollsDisplay />
 
