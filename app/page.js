@@ -6,27 +6,36 @@ import PollsDisplay from './components/PollsDisplay'
 export default function Home() {
   return (
     <div className="min-h-screen bg-rose-50">
-      {/* 
-        DESIGN NOTE: bg-rose-50 is a very faint pink background
-        It creates a soft, warm feel throughout the site
-      */}
-      
       {/* Hero Section */}
-      
-      <div className="relative hero-background py-10">
-  {/* Dark overlay for readability  */}
-  <div className="absolute inset-0 bg-pink/40"></div>
- 
-  <div className="relative max-w-4xl mx-auto text-center text-white px-4">
-    <h1 className="text-6xl font-bold mb-4 drop-shadow-lg">
-      The Book Club
-    </h1>
-   
-  </div>
-</div>
+      <div className="bg-gradient-to-br from-rose-400 to-pink-500 py-10">
+        <div className="max-w-4xl mx-auto text-center text-white px-4">
+          <h1 className="font-heading text-6xl font-bold mb-4">
+            TFS Book Club
+          </h1>
+          <p className="font-body text-xl mb-8 font-light">
+            Zumba and reading and eating snacks.
+          </p>
+          
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link
+              href="/login"
+              className="font-sans bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 inline-block transition-colors shadow-lg"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/books"
+              className="font-sans bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rose-600 inline-block transition-colors"
+            >
+              Browse Books
+            </Link>
+          </div>
+        </div>
+      </div>
             
       {/* Community Board & Polls Side-by-Side Container */}
       <div className="bg-pink-50">
+        
         {/* 
           DESIGN NOTE: This wrapper creates a white background section
           to separate the side-by-side content from the pink background

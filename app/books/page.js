@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import PageTemplate from '../components/PageTemplate'
 
 export default function BooksPage() {
   const [books, setBooks] = useState([])
@@ -39,6 +40,12 @@ export default function BooksPage() {
   }
 
   return (
+    <PageTemplate title="Book Catalog">
+      {/* 
+        EXPLANATION:
+        Everything inside PageTemplate gets inserted where {children} is
+        The title prop creates the gradient header with "Book Catalog"
+      */}
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -83,6 +90,10 @@ export default function BooksPage() {
           </div>
         )}
 
+        
+         {/*} <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">*/}
+         <div>
+        {/* Book cards... */}
         {/* Books Grid */}
         {filteredBooks.length === 0 ? (
           <div className="text-center py-16">
@@ -126,5 +137,8 @@ export default function BooksPage() {
         )}
       </div>
     </div>
+      </div>
+    </PageTemplate>
   )
 }
+  
