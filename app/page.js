@@ -16,18 +16,22 @@ export default function Home() {
             Zumba and reading and eating snacks.
           </p>
           
+          {/* New Navigation Buttons */}
           <div className="flex gap-4 justify-center flex-wrap">
+            {/* Member Button - Solid white, primary action */}
             <Link
               href="/login"
-              className="font-sans bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 inline-block transition-colors shadow-lg"
+              className="font-sans bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 hover:scale-105 inline-block transition-all duration-300 shadow-lg"
             >
-              Get Started
+              Member
             </Link>
+            
+            {/* Request Access Button - Transparent with border, secondary action */}
             <Link
-              href="/books"
-              className="font-sans bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rose-600 inline-block transition-colors"
+              href="/request-access"
+              className="font-sans bg-white/20 backdrop-blur-sm border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rose-600 hover:scale-105 inline-block transition-all duration-300 shadow-lg"
             >
-              Browse Books
+              Request Access
             </Link>
           </div>
         </div>
@@ -35,40 +39,15 @@ export default function Home() {
             
       {/* Community Board & Polls Side-by-Side Container */}
       <div className="bg-pink-50">
-        
-        {/* 
-          DESIGN NOTE: This wrapper creates a white background section
-          to separate the side-by-side content from the pink background
-        */}
-        
         <div className="max-w-7xl mx-auto py-16 px-4">
-          {/* 
-            max-w-7xl = maximum width container (wider than max-w-4xl)
-            mx-auto = centers the container
-            py-16 = padding top/bottom
-            px-4 = padding left/right (for mobile)
-          */}
-          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 
-              GRID EXPLANATION:
-              - grid: enables CSS grid layout
-              - grid-cols-1: on mobile, 1 column (stacked)
-              - lg:grid-cols-2: on large screens (1024px+), 2 columns (side-by-side)
-              - gap-8: 2rem (32px) space between columns
-              
-              This makes it responsive:
-              - Mobile: Stacked vertically
-              - Desktop: Side by side
-            */}
-            
             {/* Left Column: Community Board */}
-            <div className="bg-pink-50 p-6 rounded-lg shadow-lg">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
               <CommunityBoard />
             </div>
             
             {/* Right Column: Polls */}
-            <div className="bg-pink-50 p-6 rounded-lg shadow-lg">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
               <PollsDisplay />
             </div>
           </div>
@@ -80,11 +59,6 @@ export default function Home() {
 
       {/* Footer CTA */}
       <div className="bg-gradient-to-br from-rose-500 to-pink-600 py-16">
-        {/* 
-          DESIGN NOTE: Updated footer gradient to match rose theme
-          from-rose-500 to-pink-600 creates a richer, deeper pink
-        */}
-        
         <div className="max-w-4xl mx-auto text-center text-white px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Join Our Community?
@@ -93,11 +67,10 @@ export default function Home() {
             Sign up now to manage your reading and stay connected!
           </p>
           <Link
-            href="/login"
-            className="bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 inline-block transition-colors shadow-lg"
+            href="/request-access"
+            className="bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 hover:scale-105 inline-block transition-all duration-300 shadow-lg"
           >
-            {/* Updated button to rose theme */}
-            Sign Up Free
+            Request Access
           </Link>
         </div>
       </div>

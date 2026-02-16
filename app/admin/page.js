@@ -538,7 +538,7 @@ export default function AdminDashboard() {
 
   return (
     <PageTemplate title="Admin Dashboard">
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">

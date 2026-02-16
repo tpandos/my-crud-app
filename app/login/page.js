@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import PageTemplate from '../components/PageTemplate'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -59,7 +60,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <PageTemplate title="Login">
+      <div className="flex items-center justify-center">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <div>
           <h2 className="text-3xl font-bold text-center text-gray-900">Welcome</h2>
@@ -140,6 +142,7 @@ export default function Login() {
           </a>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTemplate>
   )
 }
