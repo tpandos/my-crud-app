@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import PageTemplate from '../components/PageTemplate'
 import { isUserAdmin } from '@/lib/adminHelpers'
 
 export default function AdminDashboard() {
@@ -536,6 +537,7 @@ export default function AdminDashboard() {
   }
 
   return (
+    <PageTemplate title="Admin Dashboard">
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -1301,5 +1303,6 @@ export default function AdminDashboard() {
         )}
       </div>
     </div>
+    </PageTemplate>
   )
 }

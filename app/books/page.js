@@ -46,16 +46,13 @@ export default function BooksPage() {
         Everything inside PageTemplate gets inserted where {children} is
         The title prop creates the gradient header with "Book Catalog"
       */}
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold text-gray-900">📚 Book Catalog</h1>
             <Link
               href="/"
-              className="text-blue-600 hover:text-blue-800"
-            >
+              className="text-blue-600 hover:text-blue-800">
               ← Back to Home
             </Link>
           </div>
@@ -136,7 +133,6 @@ export default function BooksPage() {
           </div>
         )}
       </div>
-    </div>
       </div>
     </PageTemplate>
   )

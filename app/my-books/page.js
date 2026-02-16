@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import PageTemplate from '../components/PageTemplate'
 import Link from 'next/link'
 
 export default function MyBooksPage() {
@@ -86,7 +87,8 @@ export default function MyBooksPage() {
   const counts = getShelfCounts()
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <PageTemplate title="My Books">
+    
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -111,7 +113,7 @@ export default function MyBooksPage() {
             </div>
           </div>
         </div>
-
+        <div className="space-y-6">
         {/* Shelf Tabs */}
         <div className="bg-white rounded-lg shadow mb-6 p-2">
           <div className="flex gap-2 flex-wrap">
@@ -226,5 +228,7 @@ export default function MyBooksPage() {
         )}
       </div>
     </div>
+    
+    </PageTemplate>
   )
 }

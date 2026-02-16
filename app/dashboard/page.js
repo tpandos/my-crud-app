@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { isUserAdmin } from '@/lib/adminHelpers'
+import PageTemplate from '../components/PageTemplate'
 import Link from 'next/link'
 
 // Admin Link Component
@@ -125,7 +126,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <PageTemplate title="Dashboard">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -212,7 +213,7 @@ export default function Dashboard() {
             ))
           )}
         </div>
-
+        <div className="my-6 border-t border-gray-200">
         {/* Stats */}
         {todos.length > 0 && (
           <div className="mt-6 bg-white rounded-lg shadow p-4">
@@ -237,6 +238,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-    </div>
+    </div></PageTemplate>
   )
 }
