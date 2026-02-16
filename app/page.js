@@ -12,54 +12,21 @@ export default function Home() {
       */}
       
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-rose-400 to-pink-500 py-10">
-        {/* 
-          DESIGN CHANGES:
-          1. Fixed typo: bg-linear-to-br → bg-gradient-to-br
-          2. Reduced height: py-20 → py-10 (from 80px to 40px padding)
-          3. Rose theme: from-rose-400 to-pink-500 (pretty pink gradient)
-        */}
-        
-        <div className="max-w-4xl mx-auto text-center text-white px-4">
-          <h1 className="text-6xl font-bold mb-4">Carla's Book Club</h1>
-          <p className="text-xl mb-8">
-            Some subtitle here
-          </p>
-          
-          {/* Button Colors Updated to Rose Theme */}
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link
-              href="/login"
-              className="bg-white text-rose-600 px-8 py-3 rounded-lg font-semibold hover:bg-rose-50 inline-block transition-colors shadow-lg"
-            >
-              {/* 
-                DESIGN NOTE: 
-                - text-rose-600 replaces text-red-600 (softer pink)
-                - hover:bg-rose-50 adds subtle pink tint on hover
-              */}
-              Get Started
-            </Link>
-            <Link
-              href="/books"
-              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rose-600 inline-block transition-colors"
-            >
-              {/* 
-                DESIGN NOTE: hover:text-rose-600 instead of hover:text-blue-600
-              */}
-              Browse Books
-            </Link>
-            <Link
-              href="/dashboard"
-              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rose-600 inline-block transition-colors"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-
+      
+      <div className="relative hero-background py-10">
+  {/* Dark overlay for readability  */}
+  <div className="absolute inset-0 bg-pink/40"></div>
+ 
+  <div className="relative max-w-4xl mx-auto text-center text-white px-4">
+    <h1 className="text-6xl font-bold mb-4 drop-shadow-lg">
+      The Book Club
+    </h1>
+   
+  </div>
+</div>
+            
       {/* Community Board & Polls Side-by-Side Container */}
-      <div className="bg-white">
+      <div className="bg-pink-50">
         {/* 
           DESIGN NOTE: This wrapper creates a white background section
           to separate the side-by-side content from the pink background
@@ -87,12 +54,12 @@ export default function Home() {
             */}
             
             {/* Left Column: Community Board */}
-            <div>
+            <div className="bg-pink-50 p-6 rounded-lg shadow-lg">
               <CommunityBoard />
             </div>
             
             {/* Right Column: Polls */}
-            <div>
+            <div className="bg-pink-50 p-6 rounded-lg shadow-lg">
               <PollsDisplay />
             </div>
           </div>
