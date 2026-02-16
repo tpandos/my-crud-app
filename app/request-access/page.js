@@ -3,7 +3,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 export default function RequestAccessPage() {
-  // State to track form data
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,32 +10,66 @@ export default function RequestAccessPage() {
     favoriteBook: ''
   })
   
-  // State to track if form was submitted
   const [submitted, setSubmitted] = useState(false)
-  
-  // State to track if form is currently submitting
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
-    e.preventDefault() // Prevents page reload
-    setIsSubmitting(true) // Show loading state
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError('')
 
-    // Simulate form submission (we'll connect to database later)
-    console.log('Access Request Submitted:', formData)
-    
-    // Wait 1 second to simulate processing
-    setTimeout(() => {
-      setSubmitted(true) // Show success message
-      setIsSubmitting(false) // Hide loading state
-    }, 1000)
+    try {
+      // Send form data to Web3Forms (which emails it to you)
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: 'd1639c5a-3244-43bb-98c8-684e105bf812', // ← REPLACE WITH YOUR KEY!
+          subject: '🎉 New TFS Book Club Access Request',
+          from_name: formData.name,
+          email: formData.email,
+          message: `
+New Access Request Received!
+
+Name: ${formData.name}
+Email: ${formData.email}
+
+Why they want to join:
+${formData.message}
+
+Favorite Book: ${formData.favoriteBook || 'Not provided'}
+
+---
+Submitted from: TFS Book Club Website
+Date: ${new Date().toLocaleString()}
+          `
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        console.log('✅ Email sent successfully!')
+        setSubmitted(true)
+      } else {
+        throw new Error('Failed to send email')
+      }
+    } catch (err) {
+      console.error('❌ Error:', err)
+      setError('Something went wrong. Please try again or email us directly.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  // Success Screen - Shows after form is submitted
+  // Success Screen
   if (submitted) {
     return (
       <div className="min-h-screen bg-rose-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
-          {/* Success Icon */}
           <div className="mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +89,6 @@ export default function RequestAccessPage() {
               We'll review your request and get back to you at <strong>{formData.email}</strong> soon.
             </p>
             
-            {/* Summary Box */}
             <div className="bg-rose-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-sm text-gray-700 mb-2">
                 <span className="font-semibold">Why you want to join:</span>
@@ -84,12 +116,11 @@ export default function RequestAccessPage() {
     )
   }
 
-  // Form Screen - Main request access form
+  // Form Screen
   return (
     <div className="min-h-screen bg-rose-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         
-        {/* Header */}
         <div className="text-center mb-8">
           <Link 
             href="/" 
@@ -107,9 +138,15 @@ export default function RequestAccessPage() {
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-lg shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
             
             {/* Name Field */}
             <div>
@@ -121,7 +158,7 @@ export default function RequestAccessPage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all text-gray-900"
                 placeholder="Jane Smith"
               />
             </div>
@@ -136,7 +173,7 @@ export default function RequestAccessPage() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all text-gray-900"
                 placeholder="jane@example.com"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -154,7 +191,7 @@ export default function RequestAccessPage() {
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows="5"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition-all text-gray-900"
                 placeholder="I love reading and would enjoy discussing books with other members. I'm particularly interested in..."
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -162,7 +199,7 @@ export default function RequestAccessPage() {
               </p>
             </div>
 
-            {/* Favorite Book Field (Optional) */}
+            {/* Favorite Book Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 What's your favorite book? (Optional)
@@ -171,7 +208,7 @@ export default function RequestAccessPage() {
                 type="text"
                 value={formData.favoriteBook}
                 onChange={(e) => setFormData({ ...formData, favoriteBook: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all text-gray-900"
                 placeholder="Pride and Prejudice"
               />
             </div>
@@ -198,7 +235,6 @@ export default function RequestAccessPage() {
             </div>
           </form>
 
-          {/* Help Text */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center">
               Already a member?{' '}
@@ -209,7 +245,6 @@ export default function RequestAccessPage() {
           </div>
         </div>
 
-        {/* Info Box */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">

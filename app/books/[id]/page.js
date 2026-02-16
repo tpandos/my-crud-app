@@ -10,12 +10,25 @@ export default function BookDetailPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [userBook, setUserBook] = useState(null)
+  
+  // Reviews state
+  const [reviews, setReviews] = useState([])
+  const [userReview, setUserReview] = useState(null)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    review_text: ''
+  })
+  const [averageRating, setAverageRating] = useState(null)
+  const [reviewCount, setReviewCount] = useState(0)
+  
   const router = useRouter()
 
   useEffect(() => {
     checkUser()
     if (params.id) {
       fetchBook()
+      fetchReviews()
     }
   }, [params.id])
 
@@ -24,6 +37,7 @@ export default function BookDetailPage() {
     setUser(user)
     if (user && params.id) {
       fetchUserBook(user.id)
+      fetchUserReview(user.id)
     }
   }
 
@@ -57,6 +71,138 @@ export default function BookDetailPage() {
     }
   }
 
+const fetchReviews = async () => {
+  console.log('📚 Fetching reviews for book:', params.id)
+  
+  // Fetch all reviews for this book
+  const { data, error } = await supabase
+    .from('reviews')
+    .select(`
+      *,
+      profiles (email)
+    `)
+    .eq('book_id', params.id)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('❌ Error fetching reviews:', error)
+  } else {
+    console.log('✅ Reviews fetched:', data)
+    setReviews(data || [])
+    setReviewCount(data?.length || 0)
+    
+    // Calculate average rating
+    if (data && data.length > 0) {
+      const avg = data.reduce((sum, review) => sum + review.rating, 0) / data.length
+      setAverageRating(avg.toFixed(1))
+      console.log('⭐ Average rating:', avg.toFixed(1))
+    } else {
+      setAverageRating(null)
+    }
+  }
+}
+
+  const fetchUserReview = async (userId) => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('book_id', params.id)
+      .single()
+
+    if (!error && data) {
+      setUserReview(data)
+      setReviewForm({
+        rating: data.rating,
+        review_text: data.review_text
+      })
+    }
+  }
+
+const handleReviewSubmit = async (e) => {
+  e.preventDefault()
+
+  if (!user) {
+    alert('Please sign in to write a review')
+    router.push('/login')
+    return
+  }
+
+  try {
+    if (userReview) {
+      // Update existing review
+      const { error } = await supabase
+        .from('reviews')
+        .update({
+          rating: reviewForm.rating,
+          review_text: reviewForm.review_text,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userReview.id)
+
+      if (error) throw error
+
+      alert('Review updated successfully!')
+    } else {
+      // Create new review
+      const { error } = await supabase
+        .from('reviews')
+        .insert([{
+          user_id: user.id,
+          book_id: params.id,
+          rating: reviewForm.rating,
+          review_text: reviewForm.review_text
+        }])
+
+      if (error) throw error
+
+      alert('Review posted successfully!')
+    }
+
+    // Close form
+    setShowReviewForm(false)
+
+    // Refresh reviews - wait for completion
+    await fetchReviews()
+    
+    // Refresh user review
+    if (user) {
+      await fetchUserReview(user.id)
+    }
+
+  } catch (error) {
+    console.error('Error with review:', error)
+    alert('Error: ' + error.message)
+  }
+}
+
+const handleDeleteReview = async () => {
+  if (!confirm('Are you sure you want to delete your review?')) return
+
+  try {
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', userReview.id)
+
+    if (error) throw error
+
+    alert('Review deleted')
+    
+    // Reset state
+    setUserReview(null)
+    setReviewForm({ rating: 5, review_text: '' })
+    setShowReviewForm(false)
+    
+    // Refresh reviews
+    await fetchReviews()
+
+  } catch (error) {
+    console.error('Error deleting review:', error)
+    alert('Error deleting review: ' + error.message)
+  }
+}
+
   const addToShelf = async (shelf) => {
     if (!user) {
       alert('Please sign in to add books to your shelf')
@@ -74,7 +220,6 @@ export default function BookDetailPage() {
     }
 
     if (userBook) {
-      // Update existing
       const { error } = await supabase
         .from('user_books')
         .update({
@@ -92,7 +237,6 @@ export default function BookDetailPage() {
         fetchUserBook(user.id)
       }
     } else {
-      // Add new
       const { error } = await supabase
         .from('user_books')
         .insert([bookData])
@@ -114,7 +258,6 @@ export default function BookDetailPage() {
     }
 
     if (!userBook) {
-      // If book not on shelf, add it to "finished" with rating
       const { error } = await supabase
         .from('user_books')
         .insert([{
@@ -132,7 +275,6 @@ export default function BookDetailPage() {
         fetchUserBook(user.id)
       }
     } else {
-      // Update existing rating
       const { error } = await supabase
         .from('user_books')
         .update({
@@ -152,7 +294,6 @@ export default function BookDetailPage() {
 
   const removeFromShelf = async () => {
     if (!userBook) return
-
     if (!confirm('Remove this book from your shelf?')) return
 
     const { error } = await supabase
@@ -177,6 +318,15 @@ export default function BookDetailPage() {
     return labels[shelf] || shelf
   }
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -194,18 +344,18 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-rose-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
           href="/books"
-          className="text-blue-600 hover:text-blue-800 mb-6 inline-block"
+          className="text-rose-600 hover:text-rose-700 mb-6 inline-block font-medium"
         >
           ← Back to Books
         </Link>
 
         {/* Book Details */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
           <div className="grid md:grid-cols-3 gap-8">
             {/* Book Cover */}
             <div>
@@ -220,11 +370,35 @@ export default function BookDetailPage() {
                   <span className="text-gray-400 text-6xl">📖</span>
                 </div>
               )}
+
+              {/* Average Rating Display */}
+              {reviewCount > 0 && (
+                <div className="mt-4 text-center bg-rose-50 rounded-lg p-4">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-3xl font-bold text-rose-600">{averageRating}</span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`text-2xl ${
+                            star <= Math.round(averageRating) ? 'text-yellow-400' : 'text-gray-300'
+                          }`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Book Info */}
             <div className="md:col-span-2">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-4xl font-heading font-bold text-gray-900 mb-2">
                 {book.title}
               </h1>
               <p className="text-xl text-gray-600 mb-4">by {book.author}</p>
@@ -246,7 +420,7 @@ export default function BookDetailPage() {
               {/* Metadata */}
               <div className="flex gap-3 mb-6 flex-wrap">
                 {book.genre && (
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-sm font-medium">
                     {book.genre}
                   </span>
                 )}
@@ -324,43 +498,205 @@ export default function BookDetailPage() {
               </div>
 
               {/* Star Rating */}
-<div>
-  <h3 className="text-sm font-medium text-gray-700 mb-3">Your rating:</h3>
-  <div className="flex gap-1 items-center">
-    {[1, 2, 3, 4, 5].map((star) => (
-      <button
-        key={star}
-        onClick={() => rateBook(star)}
-        className={`text-4xl transition-all hover:scale-125 ${
-          star <= (userBook?.rating || 0)
-            ? 'text-yellow-400'
-            : 'text-gray-300 hover:text-yellow-200'
-        }`}
-        title={`Rate ${star} star${star > 1 ? 's' : ''}`}
-      >
-        {star <= (userBook?.rating || 0) ? '★' : '☆'}
-      </button>
-    ))}
-    {userBook?.rating && (
-      <span className="ml-3 text-lg font-medium text-gray-700">
-        {userBook.rating}/5
-      </span>
-    )}
-  </div>
-  <p className="text-xs text-gray-500 mt-2">
-    Click on a star to rate this book
-  </p>
-</div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Your rating:</h3>
+                <div className="flex gap-1 items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => rateBook(star)}
+                      className={`text-4xl transition-all hover:scale-125 ${
+                        star <= (userBook?.rating || 0)
+                          ? 'text-yellow-400'
+                          : 'text-gray-300 hover:text-yellow-200'
+                      }`}
+                      title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                    >
+                      {star <= (userBook?.rating || 0) ? '★' : '☆'}
+                    </button>
+                  ))}
+                  {userBook?.rating && (
+                    <span className="ml-3 text-lg font-medium text-gray-700">
+                      {userBook.rating}/5
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Click on a star to rate this book
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Reviews Section - Coming Soon */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mt-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Reviews</h2>
-          <p className="text-gray-500 text-center py-8">
-            Reviews coming soon! We'll add this in the next feature.
-          </p>
+        {/* Reviews Section */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-heading font-bold text-gray-900">
+              Reviews ({reviewCount})
+            </h2>
+            
+            {user && (
+              <button
+                onClick={() => setShowReviewForm(!showReviewForm)}
+                className="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+              >
+                {userReview ? 'Edit My Review' : 'Write a Review'}
+              </button>
+            )}
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <div className="mb-8 p-6 bg-rose-50 rounded-lg border border-rose-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                {userReview ? 'Edit Your Review' : 'Write Your Review'}
+              </h3>
+              
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                {/* Rating Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Rating *
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                        className={`text-5xl transition-transform hover:scale-110 ${
+                          star <= reviewForm.rating ? 'text-yellow-400' : 'text-gray-300'
+                        }`}
+                      >
+                        {star <= reviewForm.rating ? '★' : '☆'}
+                      </button>
+                    ))}
+                    <span className="ml-3 text-2xl font-medium text-gray-700 self-center">
+                      {reviewForm.rating}/5
+                    </span>
+                  </div>
+                </div>
+
+                {/* Review Text */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Review *
+                  </label>
+                  <textarea
+                    required
+                    value={reviewForm.review_text}
+                    onChange={(e) => setReviewForm({ ...reviewForm, review_text: e.target.value })}
+                    rows="5"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none text-gray-900"
+                    placeholder="What did you think of this book? Share your thoughts..."
+                  />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+                  >
+                    {userReview ? 'Update Review' : 'Post Review'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewForm(false)}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  {userReview && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteReview}
+                      className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors ml-auto"
+                    >
+                      Delete Review
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Reviews List */}
+          {reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📝</div>
+              <p className="text-gray-500 text-lg mb-4">
+                No reviews yet. Be the first to review this book!
+              </p>
+              {user && !showReviewForm && (
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="bg-rose-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-rose-700 transition-colors"
+                >
+                  Write the First Review
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className={`p-6 rounded-lg border-2 transition-all ${
+                    review.user_id === user?.id
+                      ? 'bg-rose-50 border-rose-200'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  {/* Review Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-gray-900">
+                          {review.profiles?.email?.split('@')[0] || 'Anonymous'}
+                        </span>
+                        {review.user_id === user?.id && (
+                          <span className="bg-rose-200 text-rose-800 text-xs px-2 py-1 rounded-full font-medium">
+                            Your Review
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={`text-lg ${
+                                star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {formatDate(review.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Review Text */}
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {review.review_text}
+                  </p>
+
+                  {/* Edit timestamp if updated */}
+                  {review.updated_at !== review.created_at && (
+                    <p className="text-xs text-gray-500 mt-3 italic">
+                      Edited {formatDate(review.updated_at)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
