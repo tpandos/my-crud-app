@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { supabase } from '@/lib/supabase'  // ← ADD THIS IMPORT!
 import Link from 'next/link'
 
 export default function RequestAccessPage() {
@@ -14,24 +15,44 @@ export default function RequestAccessPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError('')
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  setIsSubmitting(true)
+  setError('')
 
-    try {
-      // Send form data to Web3Forms (which emails it to you)
-      const response = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          access_key: 'd1639c5a-3244-43bb-98c8-684e105bf812', // ← REPLACE WITH YOUR KEY!
-          subject: '🎉 New TFS Book Club Access Request',
-          from_name: formData.name,
-          email: formData.email,
-          message: `
+  try {
+    // Save to database via API route (bypasses RLS)
+    const response = await fetch('/api/request-access', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        favorite_book: formData.favoriteBook || null
+      })
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to submit request')
+    }
+
+    // Send email notification to admin
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        access_key: 'd1639c5a-3244-43bb-98c8-684e105bf812', // Your Web3Forms key
+        subject: '🎉 New TFS Book Club Access Request',
+        from_name: formData.name,
+        email: formData.email,
+        message: `
 New Access Request Received!
 
 Name: ${formData.name}
@@ -43,27 +64,24 @@ ${formData.message}
 Favorite Book: ${formData.favoriteBook || 'Not provided'}
 
 ---
-Submitted from: TFS Book Club Website
-Date: ${new Date().toLocaleString()}
-          `
-        })
+Review in admin dashboard:
+${window.location.origin}/admin
+
+Submitted: ${new Date().toLocaleString()}
+        `
       })
+    })
 
-      const data = await response.json()
+    console.log('✅ Request saved and email sent!')
+    setSubmitted(true)
 
-      if (data.success) {
-        console.log('✅ Email sent successfully!')
-        setSubmitted(true)
-      } else {
-        throw new Error('Failed to send email')
-      }
-    } catch (err) {
-      console.error('❌ Error:', err)
-      setError('Something went wrong. Please try again or email us directly.')
-    } finally {
-      setIsSubmitting(false)
-    }
+  } catch (err) {
+    console.error('❌ Error:', err)
+    setError('Something went wrong. Please try again or email us directly.')
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   // Success Screen
   if (submitted) {

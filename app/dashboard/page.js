@@ -170,26 +170,11 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/books"
-                className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all border border-white/30 flex items-center gap-2"
-              >
-                <span>📚</span>
-                <span className="font-medium">Browse Books</span>
-              </Link>
-              <Link
-                href="/my-books"
-                className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all border border-white/30 flex items-center gap-2"
-              >
-                <span>📖</span>
-                <span className="font-medium">My Books</span>
-              </Link>
               <AdminLink />
               <button
                 onClick={handleSignOut}
                 className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-all border border-white/30 flex items-center gap-2"
               >
-                <span>🚪</span>
                 <span className="font-medium">Sign Out</span>
               </button>
             </div>
@@ -288,6 +273,10 @@ export default function Dashboard() {
             )}
 
             {/* Recent Reviews */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <PollsDisplay />
+          </div>
+
             {recentReviews.length > 0 && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-heading font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -336,12 +325,7 @@ export default function Dashboard() {
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2>Your New Component</h2>
               </div>
-            */}
-
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <CommunityBoard />
-        </div>
-            
+            */}           
           </div>
 
           {/* ===== RIGHT COLUMN (1/3 WIDTH) ===== */}
@@ -462,10 +446,7 @@ export default function Dashboard() {
             ======================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* Community Board (Left) */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <CommunityBoard />
-          </div>
+
 
           {/* Polls (Right) */}
           <div className="bg-white rounded-xl shadow-lg p-6">

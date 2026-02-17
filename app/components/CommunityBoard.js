@@ -45,13 +45,12 @@ export default function CommunityBoard() {
   return (
     <div className="pl-10 pr-6 py-6">
       {/* Header with Bold Accent */}
-      <div className="mb-6 pb-4 border-b-4 border-rose-500">
-        <h2 className="text-2xl font-heading font-bold text-gray-900 flex items-center gap-3">
-          <span className="bg-white text-white w-10 h-10 rounded-lg flex items-center justify-center text-xl">
-            📌
-          </span>
-          Community Board
+      <div className="text-center mb-6 pb-4 border-b-4 border-rose-500">
+
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            📌 Community Posts
         </h2>
+
         <p className="text-gray-600 text-sm mt-2 ml-13">
           Latest announcements from your book club
         </p>

@@ -8,7 +8,8 @@ import { isUserAdmin } from '@/lib/adminHelpers'
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [activeTab, setActiveTab] = useState('books') // 'books', 'polls', 'posts', or 'events'
+  const [activeTab, setActiveTab] = useState('books') // 'books', 'polls', 'posts', 'events', or 'access'
+  const [currentUser, setCurrentUser] = useState(null)
   
   // Books State
   const [books, setBooks] = useState([])
@@ -52,11 +53,21 @@ export default function AdminDashboard() {
     location: '' 
   })
 
+  // Access Requests State
+  const [accessRequests, setAccessRequests] = useState([])
+  const [processingRequest, setProcessingRequest] = useState(null)
+
   const router = useRouter()
 
   useEffect(() => {
     checkAdminStatus()
   }, [])
+
+  useEffect(() => {
+    if (isAdmin && currentUser) {
+      if (activeTab === 'access') fetchAccessRequests()
+    }
+  }, [activeTab, isAdmin, currentUser])
 
   const checkAdminStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -65,6 +76,8 @@ export default function AdminDashboard() {
       router.push('/login')
       return
     }
+
+    setCurrentUser(user)
 
     const adminStatus = await isUserAdmin()
     
@@ -83,7 +96,97 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
+  
+  // ========== ACCESS REQUESTS FUNCTIONS ==========
+
+  const fetchAccessRequests = async () => {
+    const { data, error } = await supabase
+      .from('access_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!error) {
+      setAccessRequests(data || [])
+    } else {
+      console.error('Error fetching access requests:', error)
+    }
+  }
+
+  const approveRequest = async (request, role = 'user') => {
+    if (!confirm(`Approve ${request.name} as ${role}?\n\nYou'll need to create their account in Supabase.`)) return
+
+    setProcessingRequest(request.id)
+
+    try {
+      const { error } = await supabase
+        .from('access_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser.id,
+          notes: `Approved as ${role}`
+        })
+        .eq('id', request.id)
+
+      if (error) throw error
+
+      alert(`✅ Request Approved!
+
+Next Steps:
+1. Go to Supabase Dashboard → Authentication → Users
+2. Click "Invite User"
+3. Enter email: ${request.email}
+4. Send invitation (they'll receive email to set password)
+
+Then set their role:
+1. Go to SQL Editor
+2. Run: 
+   update profiles 
+   set role = '${role}' 
+   where email = '${request.email}';
+
+OR manually edit the profiles table.`)
+
+      fetchAccessRequests()
+    } catch (err) {
+      console.error('Error:', err)
+      alert('Error: ' + err.message)
+    } finally {
+      setProcessingRequest(null)
+    }
+  }
+
+  const rejectRequest = async (request) => {
+    const reason = prompt('Reason for rejection (optional):')
+    if (reason === null) return // User cancelled
+
+    setProcessingRequest(request.id)
+
+    try {
+      const { error } = await supabase
+        .from('access_requests')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser.id,
+          notes: reason || 'No reason provided'
+        })
+        .eq('id', request.id)
+
+      if (error) throw error
+
+      alert('Request rejected')
+      fetchAccessRequests()
+    } catch (err) {
+      console.error('Error:', err)
+      alert('Error: ' + err.message)
+    } finally {
+      setProcessingRequest(null)
+    }
+  }
+
   // ========== BOOKS FUNCTIONS ==========
+  // ... (keep all your existing book functions exactly as they are)
 
   const fetchBooks = async () => {
     const { data, error } = await supabase
@@ -195,6 +298,7 @@ export default function AdminDashboard() {
   }
 
   // ========== POLLS FUNCTIONS ==========
+  // ... (keep all your existing poll functions)
 
   const fetchPolls = async () => {
     const { data, error } = await supabase
@@ -360,6 +464,7 @@ export default function AdminDashboard() {
   }
 
   // ========== COMMUNITY POSTS FUNCTIONS ==========
+  // ... (keep all your existing post functions)
   
   const fetchPosts = async () => {
     const { data, error } = await supabase
@@ -444,6 +549,7 @@ export default function AdminDashboard() {
   }
 
   // ========== EVENTS FUNCTIONS ==========
+  // ... (keep all your existing event functions)
 
   const fetchEvents = async () => {
     const { data, error } = await supabase
@@ -536,6 +642,10 @@ export default function AdminDashboard() {
     )
   }
 
+  // Calculate pending requests count
+  const pendingRequests = accessRequests.filter(r => r.status === 'pending')
+  const reviewedRequests = accessRequests.filter(r => r.status !== 'pending')
+
   return (
     <PageTemplate title="Admin Dashboard">
     <div>
@@ -545,7 +655,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">🔧 Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage books, polls, posts, and events</p>
+              <p className="text-gray-600 mt-1">Manage books, polls, posts, events, and access requests</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -607,9 +717,28 @@ export default function AdminDashboard() {
             >
               📅 Events ({events.length})
             </button>
+            <button
+              onClick={() => setActiveTab('access')}
+              className={`flex-1 py-4 px-6 text-center font-medium transition-colors whitespace-nowrap relative ${
+                activeTab === 'access'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🔑 Access
+              {pendingRequests.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
+        {/* TAB CONTENT - Keep all your existing tabs (books, polls, posts, events) */}
+        {/* I'll only show the new ACCESS tab here for brevity */}
+
+        {/* Your existing BOOKS TAB code stays exactly the same */}
         {/* BOOKS TAB */}
         {activeTab === 'books' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -827,8 +956,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
-        {/* POLLS TAB */}
+        {/* Your existing POLLS TAB code stays exactly the same */}
+                {/* POLLS TAB */}
         {activeTab === 'polls' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Poll Form */}
@@ -1050,8 +1179,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
-        {/* COMMUNITY POSTS TAB */}
+        {/* Your existing POSTS TAB code stays exactly the same */}
+                {/* COMMUNITY POSTS TAB */}
         {activeTab === 'posts' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Post Form */}
@@ -1162,7 +1291,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
+        {/* Your existing EVENTS TAB code stays exactly the same */}
         {/* EVENTS TAB */}
         {activeTab === 'events' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1299,6 +1428,182 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+        {/* NEW: ACCESS REQUESTS TAB */}
+        {activeTab === 'access' && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Access Requests Management
+              </h2>
+              <p className="text-gray-600">
+                Review and approve new member requests
+              </p>
+            </div>
+
+            {/* Pending Requests */}
+            {pendingRequests.length > 0 ? (
+              <div className="mb-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-bold">
+                    {pendingRequests.length} Pending
+                  </span>
+                </h3>
+                
+                <div className="space-y-4">
+                  {pendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 shadow-md"
+                    >
+                      {/* Request Header */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h4 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                            {request.name}
+                            <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                              NEW
+                            </span>
+                          </h4>
+                          <p className="text-gray-700 mb-1 flex items-center gap-2">
+                            <span>📧</span>
+                            <a href={`mailto:${request.email}`} className="hover:underline">
+                              {request.email}
+                            </a>
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            📅 Submitted {new Date(request.created_at).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Why they want to join */}
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                          💬 Why they want to join:
+                        </p>
+                        <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                          <p className="text-gray-700 whitespace-pre-wrap">
+                            {request.message}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Favorite book */}
+                      {request.favorite_book && (
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-gray-700">
+                            📖 Favorite Book: <span className="font-normal text-gray-600">{request.favorite_book}</span>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3 pt-4 border-t border-yellow-300">
+                        <button
+                          onClick={() => approveRequest(request, 'user')}
+                          disabled={processingRequest === request.id}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Approve as User
+                        </button>
+                        
+                        <button
+                          onClick={() => approveRequest(request, 'admin')}
+                          disabled={processingRequest === request.id}
+                          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                          Approve as Admin
+                        </button>
+                        
+                        <button
+                          onClick={() => rejectRequest(request)}
+                          disabled={processingRequest === request.id}
+                          className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto shadow-md"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-12 text-center mb-8">
+                <div className="text-6xl mb-4">✅</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h3>
+                <p className="text-gray-600 text-lg">No pending access requests at the moment.</p>
+              </div>
+            )}
+
+            {/* Reviewed Requests */}
+            {reviewedRequests.length > 0 && (
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span>📋 Reviewed Requests</span>
+                  <span className="text-sm text-gray-500 font-normal">
+                    ({reviewedRequests.length})
+                  </span>
+                </h3>
+                
+                <div className="space-y-3">
+                  {reviewedRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className={`border-2 rounded-lg p-4 ${
+                        request.status === 'approved'
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-bold text-gray-900">{request.name}</h4>
+                            <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                              request.status === 'approved'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-red-600 text-white'
+                            }`}>
+                              {request.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">{request.email}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Reviewed {new Date(request.reviewed_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                          {request.notes && (
+                            <p className="text-xs text-gray-600 mt-2 italic bg-white/50 p-2 rounded">
+                              Note: {request.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
