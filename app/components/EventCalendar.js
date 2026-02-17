@@ -60,7 +60,7 @@ export default function EventCalendar() {
 
   if (loading) {
     return (
-      <div className="py-16 bg-gray-50">
+      <div className="py-6">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-gray-500">Loading events...</p>
         </div>
