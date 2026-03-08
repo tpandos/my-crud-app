@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'  // ← ADD THIS IMPORT!
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function RequestAccessPage() {
@@ -15,44 +15,43 @@ export default function RequestAccessPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-const handleSubmit = async (e) => {
-  e.preventDefault()
-  setIsSubmitting(true)
-  setError('')
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError('')
 
-  try {
-    // Save to database via API route (bypasses RLS)
-    const response = await fetch('/api/request-access', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        message: formData.message,
-        favorite_book: formData.favoriteBook || null
-      })
-    })
+    try {
+      // Save directly to Supabase (uses RLS policy we created)
+      const { data: savedRequest, error: dbError } = await supabase
+        .from('access_requests')
+        .insert([{
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          favorite_book: formData.favoriteBook || null,
+          status: 'pending'
+        }])
 
-    const result = await response.json()
+      if (dbError) {
+        console.error('Database error:', dbError)
+        throw dbError
+      }
 
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to submit request')
-    }
+      console.log('✅ Request saved to database!')
 
-    // Send email notification to admin
-    await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        access_key: 'd1639c5a-3244-43bb-98c8-684e105bf812', // Your Web3Forms key
-        subject: '🎉 New TFS Book Club Access Request',
-        from_name: formData.name,
-        email: formData.email,
-        message: `
+      // Send email notification to admin (optional - you can remove if you don't have Web3Forms key)
+      try {
+        await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_key: 'YOUR_WEB3FORMS_KEY_HERE', // Replace with your key or remove this section
+            subject: '🎉 New TFS Book Club Access Request',
+            from_name: formData.name,
+            email: formData.email,
+            message: `
 New Access Request Received!
 
 Name: ${formData.name}
@@ -65,23 +64,27 @@ Favorite Book: ${formData.favoriteBook || 'Not provided'}
 
 ---
 Review in admin dashboard:
-${window.location.origin}/admin
+${typeof window !== 'undefined' ? window.location.origin : ''}/admin
 
 Submitted: ${new Date().toLocaleString()}
-        `
-      })
-    })
+            `
+          })
+        })
+        console.log('✅ Email notification sent!')
+      } catch (emailError) {
+        console.log('⚠️ Email notification failed (non-critical):', emailError)
+        // Don't fail the whole process if email fails
+      }
 
-    console.log('✅ Request saved and email sent!')
-    setSubmitted(true)
+      setSubmitted(true)
 
-  } catch (err) {
-    console.error('❌ Error:', err)
-    setError('Something went wrong. Please try again or email us directly.')
-  } finally {
-    setIsSubmitting(false)
+    } catch (err) {
+      console.error('❌ Error:', err)
+      setError('Something went wrong. Please try again or contact us directly.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-}
 
   // Success Screen
   if (submitted) {
