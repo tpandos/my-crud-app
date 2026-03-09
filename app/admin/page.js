@@ -112,49 +112,56 @@ export default function AdminDashboard() {
     }
   }
 
-  const approveRequest = async (request, role = 'user') => {
-    if (!confirm(`Approve ${request.name} as ${role}?\n\nYou'll need to create their account in Supabase.`)) return
+const approveRequest = async (request, role = 'user') => {
+  if (!confirm(`Create account for ${request.name} as ${role}?`)) return
 
-    setProcessingRequest(request.id)
+  setProcessingRequest(request.id)
 
-    try {
-      const { error } = await supabase
-        .from('access_requests')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser.id,
-          notes: `Approved as ${role}`
-        })
-        .eq('id', request.id)
+  try {
+    // Call API to create user account automatically
+    const response = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: request.email,
+        name: request.name,
+        role: role,
+        requestId: request.id
+      })
+    })
 
-      if (error) throw error
+    const result = await response.json()
 
-      alert(`✅ Request Approved!
-
-Next Steps:
-1. Go to Supabase Dashboard → Authentication → Users
-2. Click "Invite User"
-3. Enter email: ${request.email}
-4. Send invitation (they'll receive email to set password)
-
-Then set their role:
-1. Go to SQL Editor
-2. Run: 
-   update profiles 
-   set role = '${role}' 
-   where email = '${request.email}';
-
-OR manually edit the profiles table.`)
-
-      fetchAccessRequests()
-    } catch (err) {
-      console.error('Error:', err)
-      alert('Error: ' + err.message)
-    } finally {
-      setProcessingRequest(null)
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to create user')
     }
+
+    alert(`✅ Account Created Successfully!
+
+User Details:
+- Name: ${request.name}
+- Email: ${request.email}
+- Role: ${role}
+
+A password reset email has been sent to ${request.email}.
+They can click the link to set their password and log in.`)
+
+    fetchAccessRequests()
+    
+  } catch (err) {
+    console.error('Error:', err)
+    alert(`❌ Error: ${err.message}
+
+Please check:
+1. The email doesn't already exist
+2. Your service role key is set correctly in Vercel
+3. The console for more details`)
+  } finally {
+    setProcessingRequest(null)
   }
+}
 
   const rejectRequest = async (request) => {
     const reason = prompt('Reason for rejection (optional):')
